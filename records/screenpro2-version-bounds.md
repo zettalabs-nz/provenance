@@ -27,7 +27,7 @@ From upstream main at 2d07441 (the 0.7.2 bump). The change was then rebased onto
 | pyarrow | `<26` | `*` | Implied by the Python cap |
 | pydeseq2 | `<0.5` | `>=0.5.2,<0.7` | 0.4 breaks with anndata 0.12; 0.7 changes results |
 
-`runDESeq` now passes `design=f"~{design}"` in place of the deprecated `design_factors=design`, the formula pydeseq2 builds internally; old and new calls gave bit-identical results on every allowed pydeseq2.
+`runDESeq` now passes `design="~" + " + ".join(factors)` in place of the deprecated `design_factors=design`, where `factors` is the given list or a one-item list for a single factor; this is how pydeseq2 itself built the formula from `design_factors`. Old and new calls gave bit-identical results on every allowed pydeseq2. After an automated review on the pull request pointed out that a list of factors would have broken the first version (`f"~{design}"`), the list case was added and checked against the old call on pydeseq2 0.5.2 and 0.7.0, for a single factor and for `['batch', 'condition']`: identical results.
 
 ## Verification
 
