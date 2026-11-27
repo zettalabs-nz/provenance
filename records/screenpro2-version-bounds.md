@@ -1,7 +1,7 @@
 # ScreenPro2: relax the dependency version bounds
 
 - Upstream: https://github.com/ArcInstitute/ScreenPro2 (MIT)
-- Contribution: issue https://github.com/ArcInstitute/ScreenPro2/issues/114, pull request: opened after this record
+- Contribution: issue https://github.com/ArcInstitute/ScreenPro2/issues/114, pull request https://github.com/ArcInstitute/ScreenPro2/pull/116
 - Kind: non-trivial
 
 ## The problem
@@ -25,21 +25,22 @@ From upstream main at 2d07441 (the 0.7.2 bump). The change was then rebased onto
 | numpy | `<2.0` | `*` | No removed names used; equal results |
 | matplotlib | `<3.7` | `*` | Old scanpy workaround |
 | pyarrow | `<26` | `*` | Implied by the Python cap |
-| pydeseq2 | `<0.5` | `>=0.5.2,<0.7` | 0.4 breaks with anndata 0.12; 0.7 changes results |
+| pydeseq2 | `<0.5` | `>=0.5.2` | 0.4 breaks with anndata 0.12; Python 3.12+ gets the latest |
 
 `runDESeq` now passes `design="~" + " + ".join(factors)` in place of the deprecated `design_factors=design`, where `factors` is the given list or a one-item list for a single factor; this is how pydeseq2 itself built the formula from `design_factors`. Old and new calls gave bit-identical results on every allowed pydeseq2. After an automated review on the pull request pointed out that a list of factors would have broken the first version (`f"~{design}"`), the list case was added and checked against the old call on pydeseq2 0.5.2 and 0.7.0, for a single factor and for `['batch', 'condition']`: identical results.
 
 ## Verification
 
 - A Linux x86_64 host: fresh `python:3.10-slim` to `python:3.13-slim` containers without Rust, plain `pip install`; the old stack from upstream main on 3.11.
-- Resolved: pandas 2.3.3, numpy 2.2.6 to 2.5.5, pydeseq2 0.5.2 to 0.6.0; old stack pandas 1.5.3, numpy 1.26.4, pydeseq2 0.4.12.
+- Resolved, with pydeseq2 uncapped: pandas 2.3.3, numpy 2.2.6 to 2.5.5, pydeseq2 0.5.2 (3.10), 0.5.4 (3.11) and 0.7.0 (3.12, 3.13); old stack pandas 1.5.3, numpy 1.26.4, pydeseq2 0.4.12. The earlier capped run resolved pydeseq2 0.5.2 to 0.6.0.
 - `pytest tests`: 4 passed on all five stacks.
-- 38 output tables per stack (counts, phenotype scores, DESeq on clean and hard data) against the old stack: 0 differences. Maximum relative differences: counts 0, scores 3.2e-15, DESeq 3.8e-12.
+- 38 output tables per stack (counts, phenotype scores, DESeq on clean and hard data) against the old stack. With the `<0.7` cap: 0 differences (counts 0, scores 3.2e-15, DESeq 3.8e-12). Uncapped: the same on 3.10 and 3.11; on 3.12 and 3.13 (pydeseq2 0.7.0) 35 tables match and the three hard-data DESeq tables move by up to 0.8 relative.
+- `runDESeq` new formula against the old `design_factors` call, full results (baseMean, log2FoldChange, lfcSE, stat, pvalue, padj) on three synthetic sets, single factor and `['batch', 'condition']`, on pydeseq2 0.5.2, 0.5.4 and 0.7.0: bit-identical.
 - A macOS arm64 laptop with Rust hidden: Python 3.12 installs from wheels and imports; Python 3.10 stops building biobear, which has no macOS cp310 wheel (0.7.1 has the same gap).
 
 ## Dead ends
 
-- pydeseq2 was first left open above 0.5.2. Version 0.7.0 changes p-values and Cook's filtering, and on hard data DESeq drifted up to 0.8 relative, so it is capped at `<0.7`.
+- pydeseq2 was first left open above 0.5.2, then capped at `<0.7` because 0.7.0 changes p-values and Cook's filtering (on hard data DESeq drifted up to 0.8 relative from 0.5.x). The maintainer asked to keep the latest pydeseq2 for ongoing benchmarking, so the cap was removed; Python 3.10 and 3.11 stay on 0.5.x because pydeseq2 0.6 and later require 3.12.
 - The first proposal reported Python 3.10 working on macOS; that install built biobear with a local Rust toolchain, so the claim was withdrawn.
 
 ## Known gaps
