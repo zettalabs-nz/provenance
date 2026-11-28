@@ -49,6 +49,15 @@ From upstream main at 2d07441 (the 0.7.2 bump). The change was then rebased onto
 - `environment.yml` keeps the old pins.
 - CI tests Python 3.11 only.
 
+## Real-data check
+
+At the maintainer's request on the pull request, `calculateDrugScreenDESeq` was run on three public decitabine CRISPRi screens (MOLM13, HL60, SKM1; `mergedcountstable.txt` from GilbertLabUCSF/Decitabine-treatment, about 100k guides each after `filterLowCounts`, 2 replicates per arm), on macOS arm64 and in Linux x86_64 containers.
+
+- The new formula against the old `design_factors` call on the same pydeseq2: identical on all 72 result tables (3 screens, 3 contrasts, Python 3.10 to 3.13, both platforms), and for a two-factor `['replicate', 'condition']` design with string labels.
+- main's pinned install (pydeseq2 0.4.12, pandas 1.5.3) against the change (pydeseq2 0.5.4, pandas 2.3.3), Python 3.11: log2FoldChange within 0.002 on every guide; lfcSE or p-value moves by more than 0.001 on at most 6 guides per screen; padj < 0.05 sets differ by at most 3 guides.
+- pydeseq2 0.5.4 against 0.7.0: at most 3 guides per screen change; padj < 0.05 sets identical. Cook's filtering needs 3 or more replicates, so its 0.7 change is not exercised by this data.
+- The version change alters one behaviour: pydeseq2 0.4.12 casts design factors to strings, 0.5 and later fit an integer column as numeric. On a synthetic set, a 2-replicate integer `replicate` gives the same condition effect either way; with 3 replicates the condition LFC moves by up to 0.012.
+
 ## How it was made
 
 Made with Claude Code (Anthropic), under the direction of the person who posted it. A separate review pass, run independently of the build, tried to break the change and the texts before posting.
